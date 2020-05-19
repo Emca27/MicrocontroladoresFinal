@@ -87,7 +87,7 @@ start
     movlw '4'
     call enviaDatos
     
-    
+  ;Aqui empieza el Menu de puntajes
 loop goto loop ; loop infinito para esperar a que se presione RB4 o RC0
     
     
