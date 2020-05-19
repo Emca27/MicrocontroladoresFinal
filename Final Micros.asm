@@ -92,6 +92,7 @@ start
  ;Quedara mamalon
  ;SuperMamalon
 loop goto loop ; loop infinito para esperar a que se presione RB4 o RC0
+    ; still waiting for el mamalon
     
     
     ; Subrutina para protocolo de envio de datos al LCD ------------------------
