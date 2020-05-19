@@ -76,7 +76,7 @@ start
     
     ; Aqui va a empezar la bienvenida
     
-    ; Moverse a la posición 5 de la segunda línea (0x45) -----------------------
+    ; Moverse a la posiciï¿½n 5 de la segunda lï¿½nea (0x45) -----------------------
     movlw b'11000101'	; se carga el 0x45 en binario
 			; el bit 7 se pone en 1 por sintaxis de Set DDRAM address
     call enviaDatos
@@ -90,6 +90,7 @@ start
     
  ;Aqui empieza el Menu de Puntajes 
  ;Quedara mamalon
+ ;SuperMamalon
 loop goto loop ; loop infinito para esperar a que se presione RB4 o RC0
     
     
