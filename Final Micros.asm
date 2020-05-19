@@ -15,43 +15,42 @@
     
     org 0x30
 configura movlb d'15'
-    clrf ANSELB, BANKED ; configurando el puerto B como digital
-    clrf ANSELC, BANKED ; configurando el puerto C como digital
+    ;clrf ANSELB, BANKED ; configurando el puerto B como digital
+    ;clrf ANSELC, BANKED ; configurando el puerto C como digital
     clrf ANSELD, BANKED ; configurando el puerto D como digital
     clrf ANSELA, BANKED	; configura como digital
     clrf TRISD, A ; configurando el puerto D como salida
-    setf TRISB, A ; configurando el puerto B como entrada
-    setf TRISC, A ; configurando el puerto C como entrada
-    clrf TRISA, A ; activa el puerto A como salida
+    ;setf TRISB, A ; configurando el puerto B como entrada
+    ;setf TRISC, A ; configurando el puerto C como entrada
+    clrf TRISA, A ; configurando el puerto A como salida
     #define RS LATA, 1, A
     #define E LATA, 2, A
     #define RW LATA, 3, A
     #define dataLCD LATD, A
     
-    
-start 
-    ; configuracion de interrupciones ------------------------------------------
-    bcf INTCON, 7, A ; activa prioridades
-    movlw b'11101000' ; configuracion de INTCON
-    movwf INTCON, A
-    movlw b'10000100' ; configuracion de INTCON2
-    movwf INTCON2, A
-    movlw b'00000111' ; configuracion de T0CON
-    movwf T0CON, A
-    movlw b'00010000' ; activacion del IOC en el pin RB4
-    movwf IOCB, A
-    movlw b'00000001' ; activacion del IOC en el pin RC0
-    movwf IOCC, A
-    
     ; Se define el valor inicial del registro para retardo para LCD ------------
     movlw .247
     movwf 0x32, A
+    
+    
+start 
+    ; configuracion de interrupciones ------------------------------------------
+    ;bcf INTCON, 7, A ; activa prioridades
+    ;movlw b'11101000' ; configuracion de INTCON
+    ;movwf INTCON, A
+    ;movlw b'10000100' ; configuracion de INTCON2
+    ;movwf INTCON2, A
+    ;movlw b'00000111' ; configuracion de T0CON
+    ;movwf T0CON, A
+    ;movlw b'00010000' ; activacion del IOC en el pin RB4
+    ;movwf IOCB, A
+    ;movlw b'00000001' ; activacion del IOC en el pin RC0
+    ;movwf IOCC, A
     
     ; retardo inicial para que la LCD se inicialice ----------------------------
     call ret40
     movlw .247
     movwf 0x32, A
-    
     
     ; Empieza a escribir en la LCD ---------------------------------------------
     bcf RS			; se pone en 0 el RS porque aun no se necesita
@@ -74,6 +73,8 @@ start
     bcf E
     call ret2ms
     nop
+    
+    ; Aqui va a empezar la bienvenida
     
     ; Moverse a la posición 5 de la segunda línea (0x45) -----------------------
     movlw b'11000101'	; se carga el 0x45 en binario
