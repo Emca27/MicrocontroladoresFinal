@@ -89,6 +89,7 @@ start
     call enviaDatos
     
  ;Aqui empieza el Menu de Puntajes 
+ ;Quedara mamalon
 loop goto loop ; loop infinito para esperar a que se presione RB4 o RC0
     
     
