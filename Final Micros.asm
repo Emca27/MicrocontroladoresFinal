@@ -28,6 +28,7 @@ configura movlb d'15'
     #define RW LATA, 3, A
     #define dataLCD LATD, A
     
+    
 start 
     ; configuracion de interrupciones ------------------------------------------
     bcf INTCON, 7, A ; activa prioridades
