@@ -20,17 +20,31 @@ configura movlb d'15'
     clrf ANSELD, BANKED ; configura el puerto D como digital
     clrf ANSELA, BANKED ; configura el puerto A como digital
     clrf ANSELE, BANKED ; configura el puerto E como digital
+    clrf ANSELC, BANKED ; configura el puerto C como digital
     clrf TRISD, A   ; configura el puerto D como salida, este puerto se usa para el bus de Datos del LCD
     ;setf TRISB, A ; configura el puerto B como entrada
     ;setf TRISC, A ; configura el puerto C como entrada
     clrf TRISA, A   ; configura el puerto A como salida, este puerto se usara para el LCD
+    clrf TRISC, A   ; configura el puerto C como salidad, C6 y C7 se usarán para los LEDs de Win/Lose
     setf TRISE, A   ; congfigura el puerto E como entrada, este puerto se usa para los botones de accion
     #define RS LATA, 1, A   ; RS del LCD
     #define E LATA, 2, A    ; Enable del LCD
     #define RW LATA, 3, A   ; Read/Write del LCD
     #define dataLCD LATD, A ; Bus de Datos para el LCD
-    #define boton PORTE, 0, A   ; este es el boton "principal" para pasar de la pantalla de Welcome a la de elegir modo y para elegir "Play Game"
-    #define boton2 PORTE, 1, A  ; este es el boton "secundario" para pasar elegir ver el marcador
+    #define botonA PORTE, 0, A   ; este es el boton "principal" para pasar de la pantalla de Welcome a la de elegir modo y para elegir "Play Game"
+    #define botonB PORTE, 1, A  ; este es el boton "secundario" para pasar elegir ver el marcador
+    #define LEDWin LATC, 6, A   ; este es el LED que se enciende si se gana la partida
+    #define LEDLose LATC, 7, A  ; este es el LED que se enciende si se pierde la partida
+    
+vidas EQU 0x34          ; este registro es en donde se almacenarán las vidas restantes
+randomNumber EQU 0x35   ; este registro es en donde se almacenará el random number
+numWins EQU 0x36        ; este registro es para mantener el puntaje de victorias
+numDefeats EQU 0x37     ; este registro es para mantener el puntaje de derrotas
+
+    movlw d'0'
+    movwf numWins       ; se inicializa el marcador de victorias en 0
+    movwf numDefeats    ; se inicializa el marcador de derrotas en 0
+
     
     ; Se define el valor inicial del registro para retardo para LCD 
     movlw .247
@@ -139,7 +153,7 @@ start
     call enviaDatos
     
 checkBotonWelcome ; cambio de pantalla al presionar el boton RE0
-    btfss boton ; checa si se presiono el boton para pasar de pantalla
+    btfss botonA ; checa si se presiono el boton para pasar de pantalla
         goto checkBotonWelcome ; si no se presiono, se queda esperando
     ; si se presiona, cambia de pantalla
 
@@ -225,15 +239,18 @@ checkBotonWelcome ; cambio de pantalla al presionar el boton RE0
     movlw '1'
     call enviaDatos
     
-checkBotonModo ; cambia de pantalla el modo que se haya seleccionado con el boton
-    btfsc boton ; checa si se presiono el boton RE0 para iniciar el juego
-        goto playGame ; si se presiono, inicia el juego
+checkBotonMode                  ; cambia de pantalla el modo que se haya seleccionado con el boton
+    incf randomNumber, F, A     ; se genera un numero "aleatorio"
+    btfsc botonA                ; checa si se presiono el boton RE0 para iniciar el juego
+        goto playGame           ; si se presiono, inicia el juego
         ; si no se presiono, checa el boton RE1 para ver el marcador
-    btfsc boton2
-        goto viewScore ; si se presiono, va al marcador
-    goto checkBotonModo ; si no se presiono, vuelve a checar el otro boton
+    btfsc botonB
+        goto viewScore          ; si se presiono, va al marcador
+    goto checkBotonMode         ; si no se presiono, vuelve a checar el otro boton
 
-playGame ; se queda esperando el potenciometro y seleccion del numero (no implementado)
+playGame                        ; se queda esperando el potenciometro y seleccion del numero (no implementado)    
+    movlw d'6'                  ; se carga la cantidad de vidas
+    movwf vidas  
     goto playGame 
 
 viewScore ; se muestra el marcador en la pantalla del LCD (Falta lo de la memoria de la EEPROM)
