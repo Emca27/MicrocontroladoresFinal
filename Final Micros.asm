@@ -41,6 +41,8 @@ randomNumber EQU 0x35   ; este registro es en donde se almacenará el random num
 numWins EQU 0x36        ; este registro es para mantener el puntaje de victorias
 numDefeats EQU 0x37     ; este registro es para mantener el puntaje de derrotas
 
+resultadoResta EQU 0x38 ;este registro es para guardar el resultado de la resta entre lo seleccionado con el potencimoetro y el random number
+
     movlw d'0'
     movwf numWins       ; se inicializa el marcador de victorias en 0
     movwf numDefeats    ; se inicializa el marcador de derrotas en 0
@@ -251,7 +253,53 @@ checkBotonMode                  ; cambia de pantalla el modo que se haya selecci
 playGame                        ; se queda esperando el potenciometro y seleccion del numero (no implementado)    
     movlw d'6'                  ; se carga la cantidad de vidas
     movwf vidas  
-    goto playGame 
+selecNum
+    movlw d'150'                ;[TODO]Supongamos que el usuarios escoge el num 150 con el potenciometro
+                                ;momentareamente usaremos numeros hardcodeados para simular la seleccion de los numeros
+                                ;Esto hasta desarrollar la parte del potenciometro
+
+
+    subwf randomNumber,1, A ;Se hace la resta y se guarda el resultado
+    btfsc STATUS,2,A            ;Se verifica si el bit dos del status es zero, de ser asÃ­ se gano el juego
+        goto gameWon
+    movf STATUS,W,A             ;Guardo lo que se genero en el STATUS despues de la operacion para despues checar si el resultado fue negativo
+    movwf resultadoResta,A
+    dcfsnz vidas, 1, A     ;Se quita una vida al jugador, de tener cero despues de esto, se acaba el juego -----MARCA MAL DECFSNZ
+        goto gameOver
+    
+                                ;[TODO] Agregar logica para saber si el numero correcto es mayor o menor, tambien hace falta crear esos custom characters
+    btfsc resultadoResta, 0, A  ;Validar esta logica, si es negativo salta linea
+        goto arrowDown
+    goto arrowUp                ;[TODO] goto o call Â¿?
+
+;Seccion de codigo que indica si se gano o perdio----------------------------------------------------------------------------------------
+
+gameWon                          ; [TODO] Implementar lÃ³gica para prender el led de ganador y para regresar al menu principal
+    incf numWins, 1, A
+
+    goto gameWon
+
+gameOver                         ;[TODO] Implementar lÃ³gica para prender el led de perdedor y para regresar al menu principal
+    incf numDefeats, 1, A
+
+
+    goto gameOver
+
+;Seccion de codigo para pinta los custom characters----------------------------------------------------------------------------------------
+arrowUp                          ;[TODO] Implementar lógica para pintar el custom que indicará al jugador escojer un numero mayor
+
+
+
+
+    goto selecNum                ;Se regresa para seleccionar el num
+
+arrowDown                          ;[TODO] Implementar lógica para pintar el custom que indicará al jugador escojer un numero menor
+
+
+
+
+    goto selecNum                ;Se regresa para seleccionar el num
+
 
 viewScore ; se muestra el marcador en la pantalla del LCD (Falta lo de la memoria de la EEPROM)
     ; Limpiar el display y enviar al home (posicion 0)
