@@ -35,11 +35,16 @@ configura movlb d'15'
     #define botonB PORTE, 1, A  ; este es el boton "secundario" para pasar elegir ver el marcador
     #define LEDWin LATC, 6, A   ; este es el LED que se enciende si se gana la partida
     #define LEDLose LATC, 7, A  ; este es el LED que se enciende si se pierde la partida
+
     
 vidas EQU 0x34          ; este registro es en donde se almacenarán las vidas restantes
 randomNumber EQU 0x35   ; este registro es en donde se almacenará el random number
 numWins EQU 0x36        ; este registro es para mantener el puntaje de victorias
 numDefeats EQU 0x37     ; este registro es para mantener el puntaje de derrotas
+
+dirVictorias EQU d'10'  ;Direccion Victorias en EEPROM
+
+dirDerrotas EQU d'10'   ;Direccion Derrotas en EEPROM
 
 resultadoResta EQU 0x38 ;este registro es para guardar el resultado de la resta entre lo seleccionado con el potencimoetro y el random number
 
@@ -66,11 +71,23 @@ start
     ;movwf IOCB, A
     ;movlw b'00000001' ; activacion del IOC en el pin RC0
     ;movwf IOCC, A
+
+    ; se inicializan las victorias y derrotas de la eeprom en 0 ------------------------------------------------------------------------
+    movlw d'0' 
+    movwf numDefeats, A
+    movwf numWins, A
+    movlw dirDerrotas
+    call escribeDerrotasEEPROM
+    movlw dirVictorias
+    call escribeVictoriasEEPROM
+
+
     
     ; retardo inicial para que la LCD se inicialice ------------------------------------------------------------------------
     call ret40
     movlw .247
     movwf 0x32, A
+    
     
     ; Empieza la configuración de la LCD -----------------------------------------------------------------------------------
     
@@ -295,7 +312,7 @@ selecNum
         goto gameOver
     
                                 ;[TODO] Agregar logica para saber si el numero correcto es mayor o menor, tambien hace falta crear esos custom characters
-    btfsc resultadoResta, 0, A  ;Validar esta logica, si es negativo salta linea
+    btfsc resultadoResta, 4, A  ;Validar esta logica, si es negativo salta linea
         goto arrowDown
     goto arrowUp                ;[TODO] goto o call Â¿?
 
@@ -304,10 +321,15 @@ selecNum
 ;Seccion de codigo que indica si se gano o perdio----------------------------------------------------------------------------------------
 
 gameWon                         ; [TODO] Implementar lÃ³gica para prender el led de ganador y para regresar al menu principal
-    incf numWins, 1, A
     bsf ledWin                  ; se prende el LED de Win
 
     ; Guardar el numero de victorias en la EEPROM
+    movlw dirVictorias
+    call leeEEPROM
+    movwf numWins, A
+    incf numWins, F, A 
+    movlw dirVictorias
+    call escribeVictoriasEEPROM
 
     ; Limpiar el display y enviar al home (posicion 0)
     call limpiaDisplay
@@ -370,10 +392,15 @@ checkNewGame
 
 
 gameOver                         ;[TODO] Implementar lÃ³gica para prender el led de perdedor y para regresar al menu principal
-    incf numDefeats, 1, A
     bsf ledLose
 
     ; Guardar el numero de defeats en la EEPROM
+    movlw dirDerrotas
+    call leeEEPROM
+    movwf numDefeats, A
+    incf numDefeats, F, A 
+    movlw dirDerrotas
+    call escribeDerrotasEEPROM
 
     ; Limpiar el display y enviar al home (posicion 0)
     call limpiaDisplay
@@ -555,6 +582,10 @@ viewScore ; se muestra el marcador en la pantalla del LCD (Falta lo de la memori
     call enviaDatos
     movlw ' '
     call enviaDatos
+    movlw dirVictorias
+    call leeEEPROM
+    addlw d'48'
+    call enviaDatos
     bcf RS ; vuelve a poner el RS en 0 para mover la posicion del cursor
     ; Moverse a la posicion 2 de la segunda linea (0x42)
     movlw b'11000010' ; se carga el 0x42 en binario, el b7 es 1 por sintaxis de Set DDRAM address
@@ -578,6 +609,10 @@ viewScore ; se muestra el marcador en la pantalla del LCD (Falta lo de la memori
     movlw ':'
     call enviaDatos
     movlw ' '
+    call enviaDatos
+    movlw dirDerrotas
+    call leeEEPROM
+    addlw d'48'
     call enviaDatos
 
 
@@ -709,6 +744,51 @@ ret2ms call ret1ms
     call ret1ms
     return
     
+     ; Subrutinas para EEPROM ----------------------------------------------------------------------------------------------------
+
+escribeDerrotasEEPROM
+    movwf EEADR, A
+    movff numDefeats,EEDATA
+    movlw b'00000100’; Habilita Write
+    movwf EECON1, A
+    movlw 0x55 ; Contraseñas
+    movwf EECON2, A
+    movlw 0x0AA
+    movwf EECON2, A
+    bsf EECON1, WR, A ;
+waitwriteD
+    btfsc EECON1, WR, A
+        goto waitwriteD
+    bcf EECON1, 2, A
+    clrf EEDATA, A ; Para verificar que se cargue el dato
+
+    return
+
+escribeVictoriasEEPROM
+    movwf EEADR, A
+    movff numWins,EEDATA
+    movlw b'00000100’; Habilita Write
+    movwf EECON1, A
+    movlw 0x55 ; Contraseñas
+    movwf EECON2, A
+    movlw 0x0AA
+    movwf EECON2, A
+    bsf EECON1, WR, A ;
+waitwriteV
+    btfsc EECON1, WR, A
+        goto waitwriteV
+    bcf EECON1, 2, A
+    clrf EEDATA, A ; Para verificar que se cargue el dato
+
+    return
+
+
+leeEEPROM ;Hay que cargar la direccion antes de mandar a llamar
+    movwf EEADR, A
+    movlw b'00000001’
+    movf EEDATA, W, A
+    return
+
     
     
     ; Rutinas de interrupciones --------------------------------------------------------------------------------------------
