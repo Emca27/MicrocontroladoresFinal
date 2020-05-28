@@ -15,26 +15,35 @@
     
     org 0x30
 configura movlb d'15'
-    ;clrf ANSELB, BANKED ; configura el puerto B como digital
+    clrf ANSELB, BANKED ; configura el puerto B como digital
     ;clrf ANSELC, BANKED ; configura el puerto C como digital
     clrf ANSELD, BANKED ; configura el puerto D como digital
     clrf ANSELA, BANKED ; configura el puerto A como digital
-    clrf ANSELE, BANKED ; configura el puerto E como digital
+    setf ANSELE, BANKED ; configura el puerto E como analogo
     clrf ANSELC, BANKED ; configura el puerto C como digital
     clrf TRISD, A   ; configura el puerto D como salida, este puerto se usa para el bus de Datos del LCD
-    ;setf TRISB, A ; configura el puerto B como entrada
+    setf TRISB, A ; configura el puerto B como entrada
     ;setf TRISC, A ; configura el puerto C como entrada
     clrf TRISA, A   ; configura el puerto A como salida, este puerto se usara para el LCD
     clrf TRISC, A   ; configura el puerto C como salidad, C6 y C7 se usarán para los LEDs de Win/Lose
-    setf TRISE, A   ; congfigura el puerto E como entrada, este puerto se usa para los botones de accion
+    setf TRISE, A   ; congfigura el puerto E como entrada
     #define RS LATA, 1, A   ; RS del LCD
     #define E LATA, 2, A    ; Enable del LCD
     #define RW LATA, 3, A   ; Read/Write del LCD
     #define dataLCD LATD, A ; Bus de Datos para el LCD
-    #define botonA PORTE, 0, A   ; este es el boton "principal" para pasar de la pantalla de Welcome a la de elegir modo y para elegir "Play Game"
-    #define botonB PORTE, 1, A  ; este es el boton "secundario" para pasar elegir ver el marcador
+    #define botonA PORTB, 0, A   ; este es el boton "principal" para pasar de la pantalla de Welcome a la de elegir modo y para elegir "Play Game"
+    #define botonB PORTB, 1, A  ; este es el boton "secundario" para pasar elegir ver el marcador
     #define LEDWin LATC, 6, A   ; este es el LED que se enciende si se gana la partida
     #define LEDLose LATC, 7, A  ; este es el LED que se enciende si se pierde la partida
+    ; configurar ADC
+    MOVLW   B'00011100'     ; AN7, aqui estara conectado el potenciometro
+    MOVWF   ADCON0
+    MOVLW   B'00000000'     ; internal voltage references
+    MOVWF   ADCON1
+    MOVLW   B'10100100'     ; right-justified, ACT=8TAD, ADCS=Fosc/4
+    MOVWF   ADCON2
+    BSF     ADCON0, 0       ; enable ADC
+
 
     
 vidas EQU 0x34          ; este registro es en donde se almacenarán las vidas restantes
@@ -298,6 +307,15 @@ playGame                        ; se queda esperando el potenciometro y seleccio
     ; Pantalla de seleccionar numero ---------------------------------------------------------------------------------------
 
 selecNum
+RUN_ADC:
+    BSF     ADCON0, 1       ; comenzar conversion
+    BTFSC   ADCON0, 1       ; si no ha acabado:
+    BRA     RUN_ADC         ;    atrapar ejecucion
+
+    btfss botonB
+        bra RUN_ADC
+    
+
     movlw d'150'                ;[TODO]Supongamos que el usuarios escoge el num 150 con el potenciometro
                                 ;momentareamente usaremos numeros hardcodeados para simular la seleccion de los numeros
                                 ;Esto hasta desarrollar la parte del potenciometro
