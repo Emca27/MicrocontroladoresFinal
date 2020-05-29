@@ -8,7 +8,7 @@
     goto configura
     
     org 0x08 ; interrupciones de alta prioridad
-    retfie ;goto tmr0int
+    goto aborto
     
     org 0x18 ; interrupciones de baja prioridad
     retfie ;goto IOCint
@@ -33,6 +33,7 @@ configura movlb d'15'
     #define dataLCD LATD, A ; Bus de Datos para el LCD
     #define botonA PORTB, 0, A   ; este es el boton "principal" para pasar de la pantalla de Welcome a la de elegir modo y para elegir "Play Game"
     #define botonB PORTB, 1, A  ; este es el boton "secundario" para pasar elegir ver el marcador
+    #define botonAbort PORTB, 2, A ; este es el boton para ejecutar la interrupcion
     #define LEDWin LATC, 6, A   ; este es el LED que se enciende si se gana la partida
     #define LEDLose LATC, 7, A  ; este es el LED que se enciende si se pierde la partida
     ; configurar ADC
@@ -43,6 +44,8 @@ configura movlb d'15'
     MOVLW   B'10100100'     ; right-justified, ACT=8TAD, ADCS=Fosc/4
     MOVWF   ADCON2
     BSF     ADCON0, 0       ; enable ADC
+
+
 
 
     
@@ -57,6 +60,16 @@ dirDerrotas EQU d'10'   ;Direccion Derrotas en EEPROM
 
 resultadoResta EQU 0x38 ;este registro es para guardar el resultado de la resta entre lo seleccionado con el potencimoetro y el random number
 
+;Configuracion de la interrupcion de aborto
+    clrf LATC, A        ;Limpiar los valores de salida del puerto C (Según esto, es buena práctica)
+    movlw b'00000000'   ;Configurando enables globales
+    movwf INTCON, A
+    bcf INTCON3, 1, A   ;Se limpia la bandera
+    bcf RCON, 7, A      ;Se habilita el uso de interrupciones
+    movlw b'10010000'
+    movwf INTCON3, A    ;Se configura el INT2
+    bsf INTCON2, 4, A   ;Rising edge en INT2
+
     movlw d'0'
     movwf numWins       ; se inicializa el marcador de victorias en 0
     movwf numDefeats    ; se inicializa el marcador de derrotas en 0
@@ -69,7 +82,7 @@ resultadoResta EQU 0x38 ;este registro es para guardar el resultado de la resta 
     
 start 
     ; configuracion de interrupciones 
-    ;bcf INTCON, 7, A ; activa prioridades
+    ;bsf INTCON, 7, A ; activa prioridades
     ;movlw b'11101000' ; configuracion de INTCON
     ;movwf INTCON, A
     ;movlw b'10000100' ; configuracion de INTCON2
@@ -107,6 +120,11 @@ start
     call enviaDatos
     movlw b'00010100' ; Configurar el incremento del cursor hacia la derecha
     call enviaDatos
+
+    ;Se activan las interrupciones--------------------------------------------------------------------------------------------
+    bsf INTCON, 7, A
+    bsf INTCON, 6, A
+    
 reiniciaJuego   ; Aqui viene cuando se acaba el juego o se presiona la interrupcion de Abortar
     ; Limpiar el display y enviar al home (posicion 0)
     call limpiaDisplay
@@ -811,11 +829,10 @@ leeEEPROM ;Hay que cargar la direccion antes de mandar a llamar
     
     ; Rutinas de interrupciones --------------------------------------------------------------------------------------------
     ;org 0x100
-;tmr0int 
-    ;bcf LATD, 0, A ; apaga el LED en el pin RD0
-    ;bcf INTCON, 2, A ; apaga la bandera del TMR0
-    ;bcf T0CON, 7, A ; desactiva el TMR0
-    ;retfie
+aborto
+    bcf INTCON3, 1, A   ;Se apaga la bandera
+    goto reiniciaJuego
+    retfie
     
 ;prendeUnSeg 
     ;movlw 0xF0 ; valor inicial del TMR0H para un ret de 1 segundo
