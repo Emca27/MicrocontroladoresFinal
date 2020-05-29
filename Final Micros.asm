@@ -36,8 +36,18 @@ configura movlb d'15'
     #define botonAbort PORTB, 2, A ; este es el boton para ejecutar la interrupcion
     #define ledWin LATC, 6, A   ; este es el LED que se enciende si se gana la partida
     #define ledLose LATC, 7, A  ; este es el LED que se enciende si se pierde la partida
-    
-    ; configurar ADC
+
+
+vidas EQU 0x34          ; este registro es en donde se almacenarán las vidas restantes
+randomNumber EQU 0x35   ; este registro es en donde se almacenará el random number
+numWins EQU 0x36        ; este registro es para mantener el puntaje de victorias
+numDefeats EQU 0x37     ; este registro es para mantener el puntaje de derrotas
+dirVictorias EQU d'10'  ;Direccion Victorias en EEPROM
+dirDerrotas EQU d'11'   ;Direccion Derrotas en EEPROM
+resultadoResta EQU 0x38 ;este registro es para guardar el resultado de la resta entre lo seleccionado con el potencimoetro y el random number
+
+
+    ; Configurar ADC -------------------------------------------------------------------------------------------------------
     MOVLW   B'00011100'     ; AN7, aqui estara conectado el potenciometro
     MOVWF   ADCON0
     MOVLW   B'00000000'     ; internal voltage references
@@ -47,21 +57,7 @@ configura movlb d'15'
     BSF     ADCON0, 0       ; enable ADC
 
 
-
-
-    
-vidas EQU 0x34          ; este registro es en donde se almacenarán las vidas restantes
-randomNumber EQU 0x35   ; este registro es en donde se almacenará el random number
-numWins EQU 0x36        ; este registro es para mantener el puntaje de victorias
-numDefeats EQU 0x37     ; este registro es para mantener el puntaje de derrotas
-
-dirVictorias EQU d'10'  ;Direccion Victorias en EEPROM
-
-dirDerrotas EQU d'10'   ;Direccion Derrotas en EEPROM
-
-resultadoResta EQU 0x38 ;este registro es para guardar el resultado de la resta entre lo seleccionado con el potencimoetro y el random number
-
-;Configuracion de la interrupcion de aborto
+    ; Configuracion de la interrupcion de aborto ---------------------------------------------------------------------------
     clrf LATC, A        ;Limpiar los valores de salida del puerto C (Según esto, es buena práctica)
     movlw b'00000000'   ;Configurando enables globales
     movwf INTCON, A
@@ -306,7 +302,7 @@ playGame                            ; se queda esperando el potenciometro y sele
     call    enviaDatos  ; se envian los datos
     bsf     RS			; ya se pone en 1 el RS para escribir el mensaje
     ; Se escribe el custom caracter del corazon y se forma "<3 = "
-    movlw   0x04        ; parte izquierda del corazon
+    movlw   0x02        ; parte izquierda del corazon
     call    enviaDatos
     movlw   0x03        ; parte derecha del corazon
     call    enviaDatos
@@ -728,7 +724,7 @@ crearCustoms
     movlw   b'00000001'
     call    enviaDatos
     ; Creación de la parte derecha del corazon (Caracter 0x03)
-    movlw   '00001100'
+    movlw   b'00001100'
     call    enviaDatos
     movlw   b'00011110'
     call    enviaDatos
@@ -799,18 +795,22 @@ ret2ms call ret1ms
 escribeDerrotasEEPROM
     movwf   EEADR, A
     movff   numDefeats,EEDATA
-    movlw   b'00000100' ; Habilita Write
+    movlw   b'00000100'     ; Habilita Write
     movwf   EECON1, A
-    movlw   0x55 ; Contraseñas
+    bcf     RCON, 7, A      ; Deshabilitar interrupciones
+    bcf     RCON, 6, A      ; Deshabilitar interrupciones
+    movlw   0x55            ; Contraseñas
     movwf   EECON2, A
     movlw   0x0AA
     movwf   EECON2, A
-    bsf     EECON1, WR, A ;
+    bsf     EECON1, WR, A    ; Empieza a escribir
+    bsf     RCON, 7, A      ; Habilitar interrupciones
+    bsf     RCON, 6, A      ; Habilitar interrupciones
 waitwriteD
-    btfsc   EECON1, WR, A
+    btfsc   EECON, WR, A    ; revisa si ya termino de escribir
         goto waitwriteD
     bcf     EECON1, 2, A
-    clrf    EEDATA, A ; Para verificar que se cargue el dato
+    clrf    EEDATA, A       ; Para verificar que se cargue el dato
 
     return
 
@@ -819,13 +819,17 @@ escribeVictoriasEEPROM
     movff   numWins,EEDATA
     movlw   b'00000100'     ; Habilita Write
     movwf   EECON1, A
+    bcf     RCON, 7, A      ; Deshabilitar interrupciones
+    bcf     RCON, 6, A      ; Deshabilitar interrupciones
     movlw   0x55            ; Contraseñas
     movwf   EECON2, A
     movlw   0x0AA
     movwf   EECON2, A
-    bsf     EECON1, WR, A 
+    bsf     EECON1, WR, A   ; Comienza a escribir
+    bsf     RCON, 7, A      ; Habilitar interrupciones
+    bsf     RCON, 6, A      ; Habilitar interrupciones
 waitwriteV
-    btfsc   EECON1, WR, A
+    btfsc   EECON, WR, A    ; revisa si ya termino de escribir
         goto waitwriteV
     bcf     EECON1, 2, A
     clrf    EEDATA, A       ; Para verificar que se cargue el dato
@@ -833,7 +837,7 @@ waitwriteV
     return
 
 
-leeEEPROM: ;Hay que cargar la direccion antes de mandar a llamar
+leeEEPROM:                  ;Hay que cargar la direccion antes de mandar a llamar
     movwf   EEADR, A
     movlw   b'00000001'
     movf    EEDATA, W, A
