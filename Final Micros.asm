@@ -1,4 +1,3 @@
-
     ; Emiliano Aguirre Bayli	A01338896
     ; Marco Antonio Ortiz Hdz	A00823250 
     
@@ -46,13 +45,21 @@ dirVictorias EQU d'10'  ;Direccion Victorias en EEPROM
 dirDerrotas EQU d'11'   ;Direccion Derrotas en EEPROM
 resultadoResta EQU 0x38 ;este registro es para guardar el resultado de la resta entre lo seleccionado con el potencimoetro y el random number
 
+numPot EQU 0x39         ; registro para guardar num que ira al LCD 
+
+contador EQU 0x40       ;Contador auxiliar
+
+acumulado EQU 0X41      ;Contador extra para llevar acumulado de la resta
+
+    clrf contador, A
+
 
     ; Configurar ADC -------------------------------------------------------------------------------------------------------
     MOVLW   B'00011100'     ; AN7, aqui estara conectado el potenciometro
     MOVWF   ADCON0
     MOVLW   B'00000000'     ; internal voltage references
     MOVWF   ADCON1
-    MOVLW   B'10100100'     ; right-justified, ACT=8TAD, ADCS=Fosc/4
+    MOVLW   B'00100100'     ; left-justified, ACT=8TAD, ADCS=Fosc/4
     MOVWF   ADCON2
     BSF     ADCON0, 0       ; enable ADC
 
@@ -77,20 +84,7 @@ resultadoResta EQU 0x38 ;este registro es para guardar el resultado de la resta 
     movwf   0x32, A
     
     
-start 
-    ; configuracion de interrupciones 
-    ;bsf INTCON, 7, A ; activa prioridades
-    ;movlw b'11101000' ; configuracion de INTCON
-    ;movwf INTCON, A
-    ;movlw b'10000100' ; configuracion de INTCON2
-    ;movwf INTCON2, A
-    ;movlw b'00000111' ; configuracion de T0CON
-    ;movwf T0CON, A
-    ;movlw b'00010000' ; activacion del IOC en el pin RB4
-    ;movwf IOCB, A
-    ;movlw b'00000001' ; activacion del IOC en el pin RC0
-    ;movwf IOCC, A
-
+start
     ; se inicializan las victorias y derrotas de la eeprom en 0 ------------------------------------------------------------------------
     movlw   d'0' 
     movwf   numDefeats, A
@@ -333,23 +327,86 @@ RUN_ADC:
     BTFSC   ADCON0, 1       ; si no ha acabado:
     BRA     RUN_ADC         ;    atrapar ejecucion
 
-    btfsc   ADRESH, 0, A    ; si el LSB de ADRESH esta en 1, ya se paso de 255
+    btfsc   ADRESH, 7, A    ; si el MSB de ADRESH esta en 1, ya se paso de 255
         goto cargar255
-    btfsc   ADRESH, 1, A    ; si el 2LSB de ADRESH esta en 1, ya se paso de 255
+    btfsc   ADRESH, 6, A    ; si el 2MSB de ADRESH esta en 1, ya se paso de 255
         goto cargar255
+	
+	
     ; Si llega aqui es porque no se pasa de 255
+
+    ; movf ADRESL, 0          ;movemos el contenido de adresl a wreg
+    ; andlw b'11000000'
+    ; movwf numPot, A 
+
+    ; movf ADRESH, 0
+    ; andlw b'00111111'       ;movemos el contenido de adresl a wreg
+    ; iorwf numPot, 1         ;Se combinan los dos registros ADRESL y ADRESH
+    
+    clrf numPot, A
+
+    btfsc ADRESL,6 ,A
+        bsf numPot, 0, A
+	nop
+    btfsc ADRESL,7 ,A
+        bsf numPot, 1, A
+	nop
+    btfsc ADRESH,0 ,A
+        bsf numPot, 2, A
+	nop
+    btfsc ADRESH,1 ,A
+        bsf numPot, 3, A
+	nop
+    btfsc ADRESH,2 ,A
+        bsf numPot, 4, A
+	nop
+    btfsc ADRESH,3 ,A
+        bsf numPot, 5, A
+	nop
+    btfsc ADRESH,4 ,A
+        bsf numPot, 6, A
+	nop
+    btfsc ADRESH,5 ,A
+        bsf numPot, 7, A
+	nop
+    
+
+	movff	numPot, acumulado
+resta100
+    movlw   0x64
+    subwf   acumulado, W, A        ;Se resta 100 para sacar la centena 
+    btfsc   STATUS, N, A      ;Se checa si el resultado fue negativo 
+        goto	imprimecentena
+    incf    contador, F, A
+    movwf   acumulado, A      ;Se guarda el acumulado del num antes de que sea negativo 
+    goto    resta100
+resta10
+    movlw   0x0A
+    subwf   acumulado, W, A       ;Se resta 10 para sacar la decena
+    btfsc   STATUS, N, A      ;Se checa si el resultado fue negativo 
+        goto	imprimedecena
+    incf    contador, F, A
+    movwf   acumulado, A
+    goto    resta10
+ 
+ 
+    
+
+    
+
 
 AFTER_CHECK:
     btfss   botonB          ; checa si ya se confirmo el numero elegido
         bra RUN_ADC
 
 
-    movlw d'150'                ;[TODO]Supongamos que el usuarios escoge el num 150 con el potenciometro
+    ;movlw d'150'                ;[TODO]Supongamos que el usuarios escoge el num 150 con el potenciometro
                                 ;momentareamente usaremos numeros hardcodeados para simular la seleccion de los numeros
                                 ;Esto hasta desarrollar la parte del potenciometro
+    movf    numPot, W, A
 
 
-    subwf   randomNumber,1, A   ;Se hace la resta y se guarda el resultado
+    subwf   randomNumber,W, A   ;Se hace la resta y se guarda el resultado
     btfsc   STATUS,2,A          ;Se verifica si el bit dos del status es zero, de ser asÃ­ se gano el juego
         goto    gameWon
     movf    STATUS,W,A          ;Guardo lo que se genero en el STATUS despues de la operacion para despues checar si el resultado fue negativo
@@ -807,7 +864,7 @@ escribeDerrotasEEPROM
     bsf     RCON, 7, A      ; Habilitar interrupciones
     bsf     RCON, 6, A      ; Habilitar interrupciones
 waitwriteD
-    btfsc   EECON, WR, A    ; revisa si ya termino de escribir
+    btfsc   EECON1, WR, A    ; revisa si ya termino de escribir
         goto waitwriteD
     bcf     EECON1, 2, A
     clrf    EEDATA, A       ; Para verificar que se cargue el dato
@@ -829,7 +886,7 @@ escribeVictoriasEEPROM
     bsf     RCON, 7, A      ; Habilitar interrupciones
     bsf     RCON, 6, A      ; Habilitar interrupciones
 waitwriteV
-    btfsc   EECON, WR, A    ; revisa si ya termino de escribir
+    btfsc   EECON1, WR, A    ; revisa si ya termino de escribir
         goto waitwriteV
     bcf     EECON1, 2, A
     clrf    EEDATA, A       ; Para verificar que se cargue el dato
@@ -842,6 +899,25 @@ leeEEPROM:                  ;Hay que cargar la direccion antes de mandar a llama
     movlw   b'00000001'
     movf    EEDATA, W, A
     return
+
+    ;Subrutina para cargar centena-----------------------------------------------------------------------------------------
+imprimecentena 
+    movf    contador, W, A
+    addlw   0x30
+    call    enviaDatos
+    clrf    contador, A
+    goto    resta10
+
+ ;Subrutina para cargar centena-----------------------------------------------------------------------------------------
+imprimedecena 
+    movf    contador, W, A
+    addlw   0x30
+    call    enviaDatos
+    movf    acumulado, W, A
+    addlw   0x30
+    call    enviaDatos
+    goto    AFTER_CHECK    
+
 
 
     ; Subrutina para cargar un 255 -----------------------------------------------------------------------------------------
