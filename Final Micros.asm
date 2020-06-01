@@ -1,3 +1,5 @@
+    
+    ; Proyecto Final - Adivina el numero
     ; Emiliano Aguirre Bayli	A01338896
     ; Marco Antonio Ortiz Hdz	A00823250 
     
@@ -14,45 +16,40 @@
     
     org 0x30
 configura movlb d'15'
-    clrf ANSELB, BANKED ; configura el puerto B como digital
-    ;clrf ANSELC, BANKED ; configura el puerto C como digital
-    clrf ANSELD, BANKED ; configura el puerto D como digital
-    clrf ANSELA, BANKED ; configura el puerto A como digital
-    setf ANSELE, BANKED ; configura el puerto E como analogo
-    clrf ANSELC, BANKED ; configura el puerto C como digital
-    clrf TRISD, A   ; configura el puerto D como salida, este puerto se usa para el bus de Datos del LCD
-    setf TRISB, A ; configura el puerto B como entrada
-    ;setf TRISC, A ; configura el puerto C como entrada
-    clrf TRISA, A   ; configura el puerto A como salida, este puerto se usara para el LCD
-    clrf TRISC, A   ; configura el puerto C como salidad, C6 y C7 se usarán para los LEDs de Win/Lose
-    setf TRISE, A   ; congfigura el puerto E como entrada
-    #define RS LATA, 1, A   ; RS del LCD
-    #define E LATA, 2, A    ; Enable del LCD
-    #define RW LATA, 3, A   ; Read/Write del LCD
-    #define dataLCD LATD, A ; Bus de Datos para el LCD
-    #define botonA PORTB, 0, A   ; este es el boton "principal" para pasar de la pantalla de Welcome a la de elegir modo y para elegir "Play Game"
-    #define botonB PORTB, 1, A  ; este es el boton "secundario" para pasar elegir ver el marcador
-    #define botonAbort PORTB, 2, A ; este es el boton para ejecutar la interrupcion
-    #define ledWin LATC, 6, A   ; este es el LED que se enciende si se gana la partida
-    #define ledLose LATC, 7, A  ; este es el LED que se enciende si se pierde la partida
+    clrf    ANSELB, BANKED          ; configura el puerto B como digital
+    clrf    ANSELD, BANKED          ; configura el puerto D como digital
+    clrf    ANSELA, BANKED          ; configura el puerto A como digital
+    setf    ANSELE, BANKED          ; configura el puerto E como analogo
+    clrf    ANSELC, BANKED          ; configura el puerto C como digital
+    clrf    TRISD, A                ; configura el puerto D como salida, este puerto se usa para el bus de Datos del LCD
+    setf    TRISB, A                ; configura el puerto B como entrada
+    clrf    TRISA, A                ; configura el puerto A como salida, este puerto se usara para el LCD
+    clrf    TRISC, A                ; configura el puerto C como salidad, C6 y C7 se usarán para los LEDs de Win/Lose
+    setf    TRISE, A                ; congfigura el puerto E como entrada
+    #define RS LATA, 1, A           ; RS del LCD
+    #define E LATA, 2, A            ; Enable del LCD
+    #define RW LATA, 3, A           ; Read/Write del LCD
+    #define dataLCD LATD, A         ; Bus de Datos para el LCD
+    #define botonA PORTB, 0, A      ; boton "principal" para pasar de pantallas, selecionar numero, etc
+    #define botonB PORTB, 1, A      ; boton "secundario" para pasar elegir ver el marcador
+    #define botonAbort PORTB, 2, A  ; boton para ejecutar la interrupcion
+    #define ledWin LATC, 6, A       ; LED que se enciende si se gana la partida
+    #define ledLose LATC, 7, A      ; LED que se enciende si se pierde la partida
 
 
-vidas EQU 0x34          ; este registro es en donde se almacenarán las vidas restantes
-randomNumber EQU 0x35   ; este registro es en donde se almacenará el random number
-numWins EQU 0x36        ; este registro es para mantener el puntaje de victorias
-numDefeats EQU 0x37     ; este registro es para mantener el puntaje de derrotas
-dirVictorias EQU d'10'  ;Direccion Victorias en EEPROM
-dirDerrotas EQU d'11'   ;Direccion Derrotas en EEPROM
-resultadoResta EQU 0x38 ;este registro es para guardar el resultado de la resta entre lo seleccionado con el potencimoetro y el random number
+vidas           EQU 0x34    ; Registro es en donde se almacenarán las vidas restantes
+randomNumber    EQU 0x35    ; Registro es en donde se almacenará el random number
+numWins         EQU 0x36    ; Registro es para mantener el puntaje de victorias
+numDefeats      EQU 0x37    ; Eegistro es para mantener el puntaje de derrotas
+resultadoResta  EQU 0x38    ; Registro es para guardar el resultado de la resta entre lo seleccionado con el potencimoetro y el random number
+numPot          EQU 0x39    ; Registro para guardar num que ira al LCD 
+contador        EQU 0x40    ; Contador auxiliar
+acumulado       EQU 0X41    ; Contador extra para llevar acumulado de la resta de la seleccion de numero
+dirVictorias    EQU d'10'   ; Direccion Victorias en EEPROM
+dirDerrotas     EQU d'11'   ; Direccion Derrotas en EEPROM
 
-numPot EQU 0x39         ; registro para guardar num que ira al LCD 
-
-contador EQU 0x40       ;Contador auxiliar
-
-acumulado EQU 0X41      ;Contador extra para llevar acumulado de la resta
 
     clrf contador, A
-
 
     ; Configurar ADC -------------------------------------------------------------------------------------------------------
     MOVLW   B'00011100'     ; AN7, aqui estara conectado el potenciometro
@@ -65,18 +62,18 @@ acumulado EQU 0X41      ;Contador extra para llevar acumulado de la resta
 
 
     ; Configuracion de la interrupcion de aborto ---------------------------------------------------------------------------
-    clrf LATC, A        ;Limpiar los valores de salida del puerto C (Según esto, es buena práctica)
-    movlw b'00000000'   ;Configurando enables globales
-    movwf INTCON, A
-    bcf INTCON3, 1, A   ;Se limpia la bandera
-    bcf RCON, 7, A      ;Se habilita el uso de interrupciones
-    movlw b'10010000'
-    movwf INTCON3, A    ;Se configura el INT2
-    bsf INTCON2, 4, A   ;Rising edge en INT2
+    clrf    LATC, A         ;Limpiar los valores de salida del puerto C (Según esto, es buena práctica)
+    movlw   b'00000000'     ;Configurando enables globales
+    movwf   INTCON, A
+    bcf     INTCON3, 1, A   ;Se limpia la bandera
+    bcf     RCON, 7, A      ;Se habilita el uso de interrupciones
+    movlw   b'10010000'
+    movwf   INTCON3, A      ;Se configura el INT2
+    bsf     INTCON2, 4, A   ;Rising edge en INT2
 
-    movlw d'0'
-    movwf numWins       ; se inicializa el marcador de victorias en 0
-    movwf numDefeats    ; se inicializa el marcador de derrotas en 0
+    movlw   d'0'
+    movwf   numWins         ; se inicializa el marcador de victorias en 0
+    movwf   numDefeats      ; se inicializa el marcador de derrotas en 0
 
     
     ; Se define el valor inicial del registro para retardo para LCD 
@@ -104,17 +101,17 @@ start
     
     ; Empieza la configuración de la LCD -----------------------------------------------------------------------------------
     
-    bcf RS ; se pone en 0 el RS porque aun no se necesita
-    movlw b'00111000' ; Modo de funcionamiento de 2 lineas 
-    call enviaDatos
-    movlw b'00001111' ; Encender el display, el cursor y el parpadeo 
-    call enviaDatos
-    movlw b'00010100' ; Configurar el incremento del cursor hacia la derecha
-    call enviaDatos
+    bcf RS                  ; se pone en 0 el RS porque aun no se necesita
+    movlw   b'00111000'     ; Modo de funcionamiento de 2 lineas 
+    call    enviaDatos
+    movlw   b'00001111'     ; Encender el display, el cursor y el parpadeo 
+    call    enviaDatos
+    movlw   b'00010100'     ; Configurar el incremento del cursor hacia la derecha
+    call    enviaDatos
 
     ;Se activan las interrupciones--------------------------------------------------------------------------------------------
-    bsf INTCON, 7, A
-    bsf INTCON, 6, A
+    bsf     INTCON, 7, A
+    bsf     INTCON, 6, A
     
 reiniciaJuego   ; Aqui viene cuando se acaba el juego o se presiona la interrupcion de Abortar
     ; Limpiar el display y enviar al home (posicion 0)
@@ -132,140 +129,135 @@ reiniciaJuego   ; Aqui viene cuando se acaba el juego o se presiona la interrupc
     call    enviaDatos  ; se envian los datos
     bsf     RS			; ya se pone en 1 el RS para escribir el mensaje
     ; Se empieza a escribir el mensaje letra por letra 
-    movlw 'W'
-    call enviaDatos
-    movlw 'E'
-    call enviaDatos
-    movlw 'L'
-    call enviaDatos
-    movlw 'C'
-    call enviaDatos
-    movlw 'O'
-    call enviaDatos
-    movlw 'M'
-    call enviaDatos
-    movlw 'E'
-    call enviaDatos
-    movlw '!'
-    call enviaDatos
+    movlw   'W'
+    call    enviaDatos
+    movlw   'E'
+    call    enviaDatos
+    movlw   'L'
+    call    enviaDatos
+    movlw   'C'
+    call    enviaDatos
+    movlw   'O'
+    call    enviaDatos
+    movlw   'M'
+    call    enviaDatos
+    movlw   'E'
+    call    enviaDatos
+    movlw   '!'
+    call    enviaDatos
     bcf     RS          ; vuelve a poner el RS en 0 para mover la posicion del cursor
     ; Moverse a la posicion 0 de la segunda linea (0x40)
     movlw   b'11000000' ; se carga el 0x40 en binario, el b7 es 1 por sintaxis de Set DDRAM address
     call    enviaDatos  ; se envian los datos
     bsf     RS          ; se pone el RS en 1 para escribir los nuevos valores
     ; Se escribe el mensaje letra por letra
-    movlw 'C'
-    call enviaDatos
-    movlw 'h'
-    call enviaDatos
-    movlw 'o'
-    call enviaDatos
-    movlw 'o'
-    call enviaDatos
-    movlw 's'
-    call enviaDatos
-    movlw 'e'
-    call enviaDatos
-    movlw ' '
-    call enviaDatos
-    movlw 'a'
-    call enviaDatos
-    movlw 'n'
-    call enviaDatos
-    movlw ' '
-    call enviaDatos
-    movlw 'o'
-    call enviaDatos
-    movlw 'p'
-    call enviaDatos
-    movlw 't'
-    call enviaDatos
-    movlw 'i'
-    call enviaDatos
-    movlw 'o'
-    call enviaDatos
-    movlw 'n'
-    call enviaDatos
+    movlw   'C'
+    call    enviaDatos
+    movlw   'h'
+    call    enviaDatos
+    movlw   'o'
+    call    enviaDatos
+    movlw   'o'
+    call    enviaDatos
+    movlw   's'
+    call    enviaDatos
+    movlw   'e'
+    call    enviaDatos
+    movlw   ' '
+    call    enviaDatos
+    movlw   'a'
+    call    enviaDatos
+    movlw   'n'
+    call    enviaDatos
+    movlw   ' '
+    call    enviaDatos
+    movlw   'o'
+    call    enviaDatos
+    movlw   'p'
+    call    enviaDatos
+    movlw   't'
+    call    enviaDatos
+    movlw   'i'
+    call    enviaDatos
+    movlw   'o'
+    call    enviaDatos
+    movlw   'n'
+    call    enviaDatos
     
 checkBotonWelcome               ; cambio de pantalla al presionar el boton RE0
     btfss   botonA              ; checa si se presiono el boton para pasar de pantalla
         goto checkBotonWelcome  ; si no se presiono, se queda esperando
     ; si se presiona, cambia de pantalla
 
+afterScore
     ; Limpiar el display y enviar al home (posicion 0)
     call    limpiaDisplay
     nop
-    ; Moverse a la posicion 1 de la primera linea (0x01) 
-    movlw   b'10000001' ; se carga el 0x01 en binario, el b7 es 1 por sintaxis de Set DDRAM address
+    ; Moverse a la posicion 2 de la primera linea (0x02) 
+    movlw   b'10000010' ; se carga el 0x02 en binario, el b7 es 1 por sintaxis de Set DDRAM address
     call    enviaDatos  ; se envian los datos
     bsf     RS			; ya se pone en 1 el RS para escribir el mensaje
     ; Se empieza a escribir el mensaje letra por letra 
-    movlw 'P'
-    call enviaDatos
-    movlw 'L'
-    call enviaDatos
-    movlw 'A'
-    call enviaDatos
-    movlw 'Y'
-    call enviaDatos
-    movlw ' '
-    call enviaDatos
-    movlw 'G'
-    call enviaDatos
-    movlw 'A'
-    call enviaDatos
-    movlw 'M'
-    call enviaDatos
-    movlw 'E'
-    call enviaDatos
-    movlw ':'
-    call enviaDatos
-    movlw ' '
-    call enviaDatos
-    movlw 'R'
-    call enviaDatos
-    movlw 'E'
-    call enviaDatos
-    movlw '0'
-    call enviaDatos
+    movlw   'P'
+    call    enviaDatos
+    movlw   'L'
+    call    enviaDatos
+    movlw   'A'
+    call    enviaDatos
+    movlw   'Y'
+    call    enviaDatos
+    movlw   ' '
+    call    enviaDatos
+    movlw   'G'
+    call    enviaDatos
+    movlw   'A'
+    call    enviaDatos
+    movlw   'M'
+    call    enviaDatos
+    movlw   'E'
+    call    enviaDatos
+    movlw   ':'
+    call    enviaDatos
+    movlw   ' '
+    call    enviaDatos
+    movlw   'A'
+    call    enviaDatos
+    
     bcf     RS              ; vuelve a poner el RS en 0 para mover la posicion del cursor
-    ; Moverse a la posicion 0 de la segunda linea (0x40)
-    movlw   b'11000000'     ; se carga el 0x40 en binario, el b7 es 1 por sintaxis de Set DDRAM address
+    ; Moverse a la posicion 1 de la segunda linea (0x41)
+    movlw   b'11000001'     ; se carga el 0x41 en binario, el b7 es 1 por sintaxis de Set DDRAM address
     call    enviaDatos      ; se envian los datos
     bsf     RS              ; se pone el RS en 1 para escribir los nuevos valores
     ; Se escribe el mensaje letra por letra
-    movlw 'S'
-    call enviaDatos
-    movlw 'C'
-    call enviaDatos
-    movlw 'O'
-    call enviaDatos
-    movlw 'R'
-    call enviaDatos
-    movlw 'E'
-    call enviaDatos
-    movlw 'S'
-    call enviaDatos
-    movlw 'T'
-    call enviaDatos
-    movlw 'R'
-    call enviaDatos
-    movlw 'E'
-    call enviaDatos
-    movlw 'A'
-    call enviaDatos
-    movlw 'K'
-    call enviaDatos
-    movlw ':'
-    call enviaDatos
-    movlw ' '
-    call enviaDatos
-    movlw 'R'
-    call enviaDatos
-    movlw 'E'
-    call enviaDatos
-    movlw '1'
-    call enviaDatos
+    movlw   'S'
+    call    enviaDatos
+    movlw   'C'
+    call    enviaDatos
+    movlw   'O'
+    call    enviaDatos
+    movlw   'R'
+    call    enviaDatos
+    movlw   'E'
+    call    enviaDatos
+    movlw   'S'
+    call    enviaDatos
+    movlw   'T'
+    call    enviaDatos
+    movlw   'R'
+    call    enviaDatos
+    movlw   'E'
+    call    enviaDatos
+    movlw   'A'
+    call    enviaDatos
+    movlw   'K'
+    call    enviaDatos
+    movlw   ':'
+    call    enviaDatos
+    movlw   ' '
+    call    enviaDatos
+    movlw   'B'
+    call    enviaDatos
+    
     
 checkBotonMode                      ; cambia de pantalla el modo que se haya seleccionado con el boton
     incf    randomNumber, F, A      ; se genera un numero "aleatorio"
@@ -300,12 +292,12 @@ playGame                            ; se queda esperando el potenciometro y sele
     call    enviaDatos
     movlw   0x03        ; parte derecha del corazon
     call    enviaDatos
-    movlw ' ' 
-    call enviaDatos
-    movlw '='
-    call enviaDatos
-    movlw ' ' 
-    call enviaDatos 
+    movlw   ' ' 
+    call    enviaDatos
+    movlw   '='
+    call    enviaDatos
+    movlw   ' ' 
+    call    enviaDatos 
 
     ; Se muestra el numero de vidas 
     movf    vidas, W, A     ; se cargan las vidas al WREG (en decimal)
@@ -328,45 +320,37 @@ RUN_ADC:
     BRA     RUN_ADC         ;    atrapar ejecucion
 
     btfsc   ADRESH, 7, A    ; si el MSB de ADRESH esta en 1, ya se paso de 255
-        goto cargar255
+        goto    cargar255
     btfsc   ADRESH, 6, A    ; si el 2MSB de ADRESH esta en 1, ya se paso de 255
-        goto cargar255
+        goto    cargar255
 	
 	
-    ; Si llega aqui es porque no se pasa de 255
-
-    ; movf ADRESL, 0          ;movemos el contenido de adresl a wreg
-    ; andlw b'11000000'
-    ; movwf numPot, A 
-
-    ; movf ADRESH, 0
-    ; andlw b'00111111'       ;movemos el contenido de adresl a wreg
-    ; iorwf numPot, 1         ;Se combinan los dos registros ADRESL y ADRESH
+    ; Merge de ADRESH y ADRESL
     
-    clrf numPot, A
+    clrf    numPot, A
 
-    btfsc ADRESL,6 ,A
+    btfsc   ADRESL,6 ,A
         bsf numPot, 0, A
 	nop
-    btfsc ADRESL,7 ,A
+    btfsc   ADRESL,7 ,A
         bsf numPot, 1, A
 	nop
-    btfsc ADRESH,0 ,A
+    btfsc   ADRESH,0 ,A
         bsf numPot, 2, A
 	nop
-    btfsc ADRESH,1 ,A
+    btfsc   ADRESH,1 ,A
         bsf numPot, 3, A
 	nop
-    btfsc ADRESH,2 ,A
+    btfsc   ADRESH,2 ,A
         bsf numPot, 4, A
 	nop
-    btfsc ADRESH,3 ,A
+    btfsc   ADRESH,3 ,A
         bsf numPot, 5, A
 	nop
-    btfsc ADRESH,4 ,A
+    btfsc   ADRESH,4 ,A
         bsf numPot, 6, A
 	nop
-    btfsc ADRESH,5 ,A
+    btfsc   ADRESH,5 ,A
         bsf numPot, 7, A
 	nop
     
@@ -374,51 +358,45 @@ RUN_ADC:
 	movff	numPot, acumulado
 resta100
     movlw   0x64
-    subwf   acumulado, W, A        ;Se resta 100 para sacar la centena 
-    btfsc   STATUS, N, A      ;Se checa si el resultado fue negativo 
+    subwf   acumulado, W, A         ; Se resta 100 para sacar la centena 
+    btfsc   STATUS, N, A            ; Se checa si el resultado fue negativo 
         goto	imprimecentena
     incf    contador, F, A
-    movwf   acumulado, A      ;Se guarda el acumulado del num antes de que sea negativo 
+    movwf   acumulado, A            ; Se guarda el acumulado del num antes de que sea negativo 
     goto    resta100
 resta10
     movlw   0x0A
-    subwf   acumulado, W, A       ;Se resta 10 para sacar la decena
-    btfsc   STATUS, N, A      ;Se checa si el resultado fue negativo 
+    subwf   acumulado, W, A         ; Se resta 10 para sacar la decena
+    btfsc   STATUS, N, A            ; Se checa si el resultado fue negativo 
         goto	imprimedecena
     incf    contador, F, A
     movwf   acumulado, A
     goto    resta10
  
  
-    
-
-    
-
 
 AFTER_CHECK:
-    btfss   botonB          ; checa si ya se confirmo el numero elegido
+    btfss   botonA                  ; checa si ya se confirmo el numero elegido
         bra RUN_ADC
 
 
-    ;movlw d'150'                ;[TODO]Supongamos que el usuarios escoge el num 150 con el potenciometro
-                                ;momentareamente usaremos numeros hardcodeados para simular la seleccion de los numeros
-                                ;Esto hasta desarrollar la parte del potenciometro
+    ;movlw d'150'                   ;[TODO]Supongamos que el usuarios escoge el num 150 con el potenciometro
+                                    ;momentareamente usaremos numeros hardcodeados para simular la seleccion de los numeros
+                                    ;Esto hasta desarrollar la parte del potenciometro
     movf    numPot, W, A
 
-
-    subwf   randomNumber,W, A   ;Se hace la resta y se guarda el resultado
-    btfsc   STATUS,2,A          ;Se verifica si el bit dos del status es zero, de ser asÃ­ se gano el juego
+    subwf   randomNumber,W, A       ;Se hace la resta y se guarda el resultado
+    btfsc   STATUS,2,A              ;Se verifica si el bit dos del status es zero, de ser asÃ­ se gano el juego
         goto    gameWon
-    movf    STATUS,W,A          ;Guardo lo que se genero en el STATUS despues de la operacion para despues checar si el resultado fue negativo
+    movf    STATUS,W,A              ;Guardo lo que se genero en el STATUS despues de la operacion para despues checar si el resultado fue negativo
     movwf   resultadoResta,A
-    dcfsnz  vidas, 1, A         ;Se quita una vida al jugador, de tener cero despues de esto, se acaba el juego -----MARCA MAL DECFSNZ
+    dcfsnz  vidas, 1, A             ;Se quita una vida al jugador, de tener cero despues de esto, se acaba el juego -----MARCA MAL DECFSNZ
         goto    gameOver
     
-                                ;[TODO] Agregar logica para saber si el numero correcto es mayor o menor, tambien hace falta crear esos custom characters
-    btfsc resultadoResta, 4, A  ;Validar esta logica, si es negativo salta linea
+                                    ;[TODO] Agregar logica para saber si el numero correcto es mayor o menor, tambien hace falta crear esos custom characters
+    btfsc resultadoResta, 4, A      ;Validar esta logica, si es negativo salta linea
         goto arrowDown
-    goto arrowUp                ;[TODO] goto o call Â¿?
-
+    goto arrowUp                    ;[TODO] goto o call Â¿?
 
 
 ;Seccion de codigo que indica si se gano o perdio----------------------------------------------------------------------------------------
@@ -438,53 +416,63 @@ gameWon                         ; [TODO] Implementar lÃ³gica para prender el l
     call    limpiaDisplay
     nop
     bcf     RS
-    ; Moverse a la posicion 4 de la primera linea (0x04) 
-    movlw   b'10000100' ; se carga el 0x04 en binario, el b7 es 1 por sintaxis de Set DDRAM address
+    ; Moverse a la posicion 1 de la primera linea (0x01) 
+    movlw   b'10000001' ; se carga el 0x01 en binario, el b7 es 1 por sintaxis de Set DDRAM address
     call    enviaDatos  ; se envian los datos
     bsf     RS			; ya se pone en 1 el RS para escribir el mensaje
     ; Se empieza a escribir el mensaje letra por letra 
-    movlw 'Y'
-    call enviaDatos
-    movlw 'O'
-    call enviaDatos
-    movlw 'U'
-    call enviaDatos
-    movlw ' '
-    call enviaDatos
-    movlw 'W'
-    call enviaDatos
-    movlw 'I'
-    call enviaDatos
-    movlw 'N'
-    call enviaDatos
-    movlw '!'
-    call enviaDatos
+    movlw   'V'
+    call    enviaDatos
+    movlw   'I'
+    call    enviaDatos
+    movlw   'C'
+    call    enviaDatos
+    movlw   'T'
+    call    enviaDatos
+    movlw   'O'
+    call    enviaDatos
+    movlw   'R'
+    call    enviaDatos
+    movlw   'Y'
+    call    enviaDatos
+    movlw   ' '
+    call    enviaDatos
+    movlw   'R'
+    call    enviaDatos
+    movlw   'O'
+    call    enviaDatos
+    movlw   'Y'
+    call    enviaDatos
+    movlw   'A'
+    call    enviaDatos
+    movlw   'L'
+    call    enviaDatos
+    movlw   'E'
+    call    enviaDatos
+
     bcf     RS          ; vuelve a poner el RS en 0 para mover la posicion del cursor
-    ; Moverse a la posicion 3 de la segunda linea (0x43)
-    movlw   b'11000011' ; se carga el 0x40 en binario, el b7 es 1 por sintaxis de Set DDRAM address
+    ; Moverse a la posicion 4 de la segunda linea (0x44)
+    movlw   b'11000100' ; se carga el 0x44 en binario, el b7 es 1 por sintaxis de Set DDRAM address
     call    enviaDatos  ; se envian los datos
     bsf     RS          ; se pone el RS en 1 para escribir los nuevos valores
     ; Se escribe el mensaje letra por letra
-    movlw 'A'
-    call enviaDatos
-    movlw 'G'
-    call enviaDatos
-    movlw 'A'
-    call enviaDatos
-    movlw 'I'
-    call enviaDatos
-    movlw 'N'
-    call enviaDatos
-    movlw '?'
-    call enviaDatos
-    movlw ' '
-    call enviaDatos
-    movlw 'R'
-    call enviaDatos
-    movlw 'E'
-    call enviaDatos
-    movlw '0'
-    call enviaDatos
+    movlw   'A'
+    call    enviaDatos
+    movlw   'G'
+    call    enviaDatos
+    movlw   'A'
+    call    enviaDatos
+    movlw   'I'
+    call    enviaDatos
+    movlw   'N'
+    call    enviaDatos
+    movlw   '?'
+    call    enviaDatos
+    movlw   ' '
+    call    enviaDatos
+    movlw   'A'
+    call    enviaDatos
+    
 
 checkNewGame
     btfss   botonA              ; Checa si se presiono el botonA (RE0)
@@ -514,52 +502,50 @@ gameOver                         ;[TODO] Implementar lÃ³gica para prender el l
     call    enviaDatos  ; se envian los datos
     bsf     RS			; ya se pone en 1 el RS para escribir el mensaje
     ; Se empieza a escribir el mensaje letra por letra 
-    movlw 'G'
-    call enviaDatos
-    movlw 'A'
-    call enviaDatos
-    movlw 'M'
-    call enviaDatos
-    movlw 'E'
-    call enviaDatos
-    movlw ' '
-    call enviaDatos
-    movlw 'O'
-    call enviaDatos
-    movlw 'V'
-    call enviaDatos
-    movlw 'E'
-    call enviaDatos
-    movlw 'R'
-    call enviaDatos
-    movlw '!'
-    call enviaDatos
+    movlw   'G'
+    call    enviaDatos
+    movlw   'A'
+    call    enviaDatos
+    movlw   'M'
+    call    enviaDatos
+    movlw   'E'
+    call    enviaDatos
+    movlw   ' '
+    call    enviaDatos
+    movlw   'O'
+    call    enviaDatos
+    movlw   'V'
+    call    enviaDatos
+    movlw   'E'
+    call    enviaDatos
+    movlw   'R'
+    call    enviaDatos
+    movlw   '!'
+    call    enviaDatos
+
     bcf     RS          ; vuelve a poner el RS en 0 para mover la posicion del cursor
-    ; Moverse a la posicion 3 de la segunda linea (0x43)
-    movlw   b'11000011' ; se carga el 0x40 en binario, el b7 es 1 por sintaxis de Set DDRAM address
+    ; Moverse a la posicion 4 de la segunda linea (0x44)
+    movlw   b'11000100' ; se carga el 0x44 en binario, el b7 es 1 por sintaxis de Set DDRAM address
     call    enviaDatos  ; se envian los datos
     bsf     RS          ; se pone el RS en 1 para escribir los nuevos valores
     ; Se escribe el mensaje letra por letra
-    movlw 'R'
-    call enviaDatos
-    movlw 'E'
-    call enviaDatos
-    movlw 'T'
-    call enviaDatos
-    movlw 'R'
-    call enviaDatos
-    movlw 'Y'
-    call enviaDatos
-    movlw '?'
-    call enviaDatos
-    movlw ' '
-    call enviaDatos
-    movlw 'R'
-    call enviaDatos
-    movlw 'E'
-    call enviaDatos
-    movlw '0'
-    call enviaDatos
+    movlw   'R'
+    call    enviaDatos
+    movlw   'E'
+    call    enviaDatos
+    movlw   'T'
+    call    enviaDatos
+    movlw   'R'
+    call    enviaDatos
+    movlw   'Y'
+    call    enviaDatos
+    movlw   '?'
+    call    enviaDatos
+    movlw   ' '
+    call    enviaDatos
+    movlw   'A'
+    call    enviaDatos
+    
 
 checkRetry
     btfss   botonA              ; Checa si se presiono el botonA (RE0)
@@ -577,26 +563,26 @@ arrowUp
     call    enviaDatos      ; se envian los datos
     bsf     RS			    ; ya se pone en 1 el RS para escribir el mensaje
     ; Se escriben 4 flechas hacia arriba en la primera linea de la LCD
-    movlw 0x00
-    call enviaDatos
-    movlw ' '
-    call enviaDatos
-    movlw ' '
-    call enviaDatos
-    movlw 0x00
-    call enviaDatos
-    movlw ' '
-    call enviaDatos
-    movlw ' '
-    call enviaDatos
-    movlw 0x00
-    call enviaDatos
-    movlw ' '
-    call enviaDatos
-    movlw ' '
-    call enviaDatos
-    movlw 0x00
-    call enviaDatos
+    movlw   0x00
+    call    enviaDatos
+    movlw   ' '
+    call    enviaDatos
+    movlw   ' '
+    call    enviaDatos
+    movlw   0x00
+    call    enviaDatos
+    movlw   ' '
+    call    enviaDatos
+    movlw   ' '
+    call    enviaDatos
+    movlw   0x00
+    call    enviaDatos
+    movlw   ' '
+    call    enviaDatos
+    movlw   ' '
+    call    enviaDatos
+    movlw   0x00
+    call    enviaDatos
 
     ; Moverse a la posicion 10 de la segunda linea (0x50) para desplegar nuevo numero de vidas
     bcf     RS
@@ -624,26 +610,26 @@ arrowDown
     call    enviaDatos  ; se envian los datos
     bsf     RS			; ya se pone en 1 el RS para escribir el mensaje
     ; Se escriben 4 flechas hacia abajo en la primera linea de la LCD
-    movlw 0x01
-    call enviaDatos
-    movlw ' '
-    call enviaDatos
-    movlw ' '
-    call enviaDatos
-    movlw 0x01
-    call enviaDatos
-    movlw ' '
-    call enviaDatos
-    movlw ' '
-    call enviaDatos
-    movlw 0x01
-    call enviaDatos
-    movlw ' '
-    call enviaDatos
-    movlw ' '
-    call enviaDatos
-    movlw 0x01
-    call enviaDatos
+    movlw   0x01
+    call    enviaDatos
+    movlw   ' '
+    call    enviaDatos
+    movlw   ' '
+    call    enviaDatos
+    movlw   0x01
+    call    enviaDatos
+    movlw   ' '
+    call    enviaDatos
+    movlw   ' '
+    call    enviaDatos
+    movlw   0x01
+    call    enviaDatos
+    movlw   ' '
+    call    enviaDatos
+    movlw   ' '
+    call    enviaDatos
+    movlw   0x01
+    call    enviaDatos
 
     ; Moverse a la posicion 10 de la segunda linea (0x50) para desplegar nuevo numero de vidas
     bcf     RS
@@ -668,59 +654,88 @@ viewScore ; se muestra el marcador en la pantalla del LCD (Falta lo de la memori
     ; Limpiar el display y enviar al home (posicion 0)
     call    limpiaDisplay
     nop
-    ; Moverse a la posicion 3 de la primera linea (0x03) 
-    movlw   b'10000011'     ; se carga el 0x03 en binario, el b7 es 1 por sintaxis de Set DDRAM address
+    ; Moverse a la posicion 0 de la primera linea (0x00) 
+    movlw   b'10000000'     ; se carga el 0x00 en binario, el b7 es 1 por sintaxis de Set DDRAM address
     call    enviaDatos      ; se envian los datos
     bsf     RS			    ; ya se pone en 1 el RS para escribir el mensaje
     ; Se empieza a escribir el mensaje letra por letra 
-    movlw 'W'
-    call enviaDatos
-    movlw 'I'
-    call enviaDatos
-    movlw 'N'
-    call enviaDatos
-    movlw 'S'
-    call enviaDatos
-    movlw ':'
-    call enviaDatos
-    movlw ' '
-    call enviaDatos
-    movlw dirVictorias
-    call leeEEPROM
-    addlw d'48'
-    call enviaDatos
+    movlw   'W'
+    call    enviaDatos
+    movlw   'I'
+    call    enviaDatos
+    movlw   'N'
+    call    enviaDatos
+    movlw   'S'
+    call    enviaDatos
+    movlw   ':'
+    call    enviaDatos
+    movlw   dirVictorias
+    call    leeEEPROM
+    addlw   d'48'
+    call    enviaDatos
     bcf     RS              ; vuelve a poner el RS en 0 para mover la posicion del cursor
-    ; Moverse a la posicion 2 de la segunda linea (0x42)
-    movlw   b'11000010'     ; se carga el 0x42 en binario, el b7 es 1 por sintaxis de Set DDRAM address
+    ; Moverse a la posicion 12 de la primera linea (0x11)
+    movlw   b'10010001'     ; se carga el 0x12 en binario, el b7 es 1 por sintaxis de Set DDRAM address
     call    enviaDatos      ; se envian los datos
     bsf     RS              ; se pone el RS en 1 para escribir los nuevos valores
     ; Se escribe el mensaje letra por letra
-    movlw 'D'
-    call enviaDatos
-    movlw 'E'
-    call enviaDatos
-    movlw 'F'
-    call enviaDatos
-    movlw 'E'
-    call enviaDatos
-    movlw 'A'
-    call enviaDatos
-    movlw 'T'
-    call enviaDatos
-    movlw 'S'
-    call enviaDatos
-    movlw ':'
-    call enviaDatos
-    movlw ' '
-    call enviaDatos
-    movlw dirDerrotas
-    call leeEEPROM
-    addlw d'48'
-    call enviaDatos
+    movlw   'R'
+    call    enviaDatos
+    movlw   'E'
+    call    enviaDatos
+    movlw   'S'
+    call    enviaDatos
+    movlw   'E'
+    call    enviaDatos
+    movlw   'T'
+    call    enviaDatos
+    bcf     RS              ; vuelve a poner el RS en 0 para mover la posicion del cursor
+    ; Moverse a la posicion 0 de la segunda linea (0x40)
+    movlw   b'11000000'     ; se carga el 0x40 en binario, el b7 es 1 por sintaxis de Set DDRAM address
+    call    enviaDatos      ; se envian los datos
+    bsf     RS              ; se pone el RS en 1 para escribir los nuevos valores
+    ; Se escribe el mensaje letra por letra
+    movlw   'D'
+    call    enviaDatos
+    movlw   'E'
+    call    enviaDatos
+    movlw   'F'
+    call    enviaDatos
+    movlw   'E'
+    call    enviaDatos
+    movlw   'A'
+    call    enviaDatos
+    movlw   'T'
+    call    enviaDatos
+    movlw   'S'
+    call    enviaDatos
+    movlw   ':'
+    call    enviaDatos
+    movlw   ' '
+    call    enviaDatos
+    movlw   dirDerrotas
+    call    leeEEPROM
+    addlw   d'48'
+    call    enviaDatos
+    bcf     RS              ; vuelve a poner el RS en 0 para mover la posicion del cursor
+    ; Moverse a la posicion 14 de la segunda linea (0x53)
+    movlw   b'11010011'     ; se carga el 0x53 en binario, el b7 es 1 por sintaxis de Set DDRAM address
+    call    enviaDatos      ; se envian los datos
+    bsf     RS              ; se pone el RS en 1 para escribir los nuevos valores
+    ; Se escribe el mensaje letra por letra
+    movlw   'R'
+    call    enviaDatos
+    movlw   'B'
+    call    enviaDatos
+    movlw   '1' 
+    call    enviaDatos
 
-
-loop        ; loop infinito para pausar el programa mientras debuggeo
-    goto loop 
+checkBotonScore
+    btfsc   botonA          ; checa si se presiona el botonA
+        goto afterScore     ; si se presiona, se regresa al menu
+    btfsc   botonB          ; si no, checa si se presiona el botonB
+        goto resetScore     ; si se presiona, resetea el marcador
+    goto    checkBotonScore ; si no, vuelve a checar el botonA
 
     
     ; Creación de custom characters para LCD -------------------------------------------------------------------------------
@@ -831,7 +846,7 @@ enviaDatos
     movwf   0x32, A
     
     ; Retardos para LCD ----------------------------------------------------------------------------------------------------
-ret40 incf 0x32, F, A
+ret40 incf  0x32, F, A
     btfss   STATUS, 1
     goto    ret40
     return
@@ -900,7 +915,20 @@ leeEEPROM:                  ;Hay que cargar la direccion antes de mandar a llama
     movf    EEDATA, W, A
     return
 
-    ;Subrutina para cargar centena-----------------------------------------------------------------------------------------
+    ; Subrutina para resetear el marcador ---------------------------------------------------------------------------------- 
+resetScore
+    ; Pone en 0 el numero de victorias de la EEPROM
+    movlw   d'0' 
+    movwf   numDefeats, A
+    movwf   numWins, A
+    movlw   dirDerrotas
+    call    escribeDerrotasEEPROM
+    movlw   dirVictorias
+    call    escribeVictoriasEEPROM
+    goto    viewScore
+
+
+    ; Subrutina para cargar centena ----------------------------------------------------------------------------------------
 imprimecentena 
     movf    contador, W, A
     addlw   0x30
@@ -908,7 +936,7 @@ imprimecentena
     clrf    contador, A
     goto    resta10
 
- ;Subrutina para cargar centena-----------------------------------------------------------------------------------------
+    ; Subrutina para cargar centena ----------------------------------------------------------------------------------------
 imprimedecena 
     movf    contador, W, A
     addlw   0x30
@@ -937,8 +965,6 @@ cargar255:
     bsf     RS			; ya se pone en 1 el RS para escribir el mensaje
 
     goto AFTER_CHECK
-
-    
     
     ; Rutinas de interrupciones --------------------------------------------------------------------------------------------
     ;org 0x100
@@ -946,31 +972,6 @@ aborto
     bcf INTCON3, 1, A   ;Se apaga la bandera
     goto reiniciaJuego
     retfie
-    
-;prendeUnSeg 
-    ;movlw 0xF0 ; valor inicial del TMR0H para un ret de 1 segundo
-    ;movwf TMR0H, A 
-    ;movlw 0xBD ; valor inicial del TMR0L para un ret de 1 segundo
-    ;movwf TMR0L, A
-    ;bsf LATD, 0, A ; prende el LED en el pin RD0
-    ;bsf T0CON, 7, A ; activa el TMR0
-    ;retfie
-    
-;prendeMedioSeg
-    ;movlw 0xF8 ; valor inicial del TMR0H para un ret de 1/2 segundo
-    ;movwf TMR0H, A 
-    ;movlw 0x5E ; valor inicial del TMR0L para un ret de 1/2 segundo
-    ;movwf TMR0L, A
-    ;bsf LATD, 0, A ; prende el LED en el pin RD0
-    ;bsf T0CON, 7, A ; activa el TMR0
-    ;retfie
-    
-;IOCint 
-    ;btfsc PORTB, 4, A ; checa si se presiono RB4
-	;goto prendeUnSeg
-    ;btfsc PORTC, 0, A ; checa si se presiono RC0
-	;goto prendeMedioSeg
-    ;retfie
     
     end
 
