@@ -104,7 +104,7 @@ start
     bcf RS                  ; se pone en 0 el RS porque aun no se necesita
     movlw   b'00111000'     ; Modo de funcionamiento de 2 lineas 
     call    enviaDatos
-    movlw   b'00001111'     ; Encender el display, el cursor y el parpadeo 
+    movlw   b'00001100'     ; Encender el display, el cursor y el parpadeo 
     call    enviaDatos
     movlw   b'00010100'     ; Configurar el incremento del cursor hacia la derecha
     call    enviaDatos
@@ -273,14 +273,92 @@ checkBotonMode                      ; cambia de pantalla el modo que se haya sel
     ; Pantalla de Play Game ------------------------------------------------------------------------------------------------
 
 playGame                            ; se queda esperando el potenciometro y seleccion del numero (no implementado)    
-    movlw   d'6'                    ; se carga la cantidad de vidas
-    movwf   vidas  
     ; Limpiar el display y enviar al home (posicion 0)
     call    limpiaDisplay
     nop
+    ; Moverse a la posicion 0 de la primera linea (0x00) 
+    movlw   b'10000000' ; se carga el 0x00 en binario, el b7 es 1 por sintaxis de Set DDRAM address
+    call    enviaDatos  ; se envian los datos
+    bsf     RS			; ya se pone en 1 el RS para escribir el mensaje
+    ; Se empieza a escribir el mensaje letra por letra 
+    movlw   'N'
+    call    enviaDatos
+    movlw   'O'
+    call    enviaDatos
+    movlw   'R'
+    call    enviaDatos
+    movlw   'M'
+    call    enviaDatos
+    movlw   'A'
+    call    enviaDatos
+    movlw   'L'
+    call    enviaDatos
+    movlw   ' '
+    call    enviaDatos
+    movlw   '('
+    call    enviaDatos
+    movlw   0x02
+    call    enviaDatos
+    movlw   0x03
+    call    enviaDatos
+    movlw   'x'
+    call    enviaDatos
+    movlw   '6'
+    call    enviaDatos
+    movlw   ')'
+    call    enviaDatos
+    movlw   ':'
+    call    enviaDatos
+    movlw   ' '
+    call    enviaDatos
+    movlw   'A'
+    call    enviaDatos
+    
+    bcf     RS              ; vuelve a poner el RS en 0 para mover la posicion del cursor
+    ; Moverse a la posicion 1 de la segunda linea (0x41)
+    movlw   b'11000001'     ; se carga el 0x41 en binario, el b7 es 1 por sintaxis de Set DDRAM address
+    call    enviaDatos      ; se envian los datos
+    bsf     RS              ; se pone el RS en 1 para escribir los nuevos valores
+    ; Se escribe el mensaje letra por letra
+    movlw   'H'
+    call    enviaDatos
+    movlw   'A'
+    call    enviaDatos
+    movlw   'R'
+    call    enviaDatos
+    movlw   'D'
+    call    enviaDatos
+    movlw   ' '
+    call    enviaDatos
+    movlw   '('
+    call    enviaDatos
+    movlw   0X02
+    call    enviaDatos
+    movlw   0X03
+    call    enviaDatos
+    movlw   'x'
+    call    enviaDatos
+    movlw   '2'
+    call    enviaDatos
+    movlw   ')'
+    call    enviaDatos
+    movlw   ':'
+    call    enviaDatos
+    movlw   ' '
+    call    enviaDatos
+    movlw   'B'
+    call    enviaDatos
 
-    ; FALTA desplegar el numero a elegir en la primera linea
+checkDifficulty
+    btfsc   botonA                  ; checa si se presiono el botonA
+        goto carga6vidas               ; si se presiono, carga 6 vidas
+        ; si no se presiono, checa el botonB
+    btfsc   botonB
+        goto carga2vidas              ; si se presiono, carga 2 vidas
+    goto    checkDifficulty          ; si no se presiono, vuelve a checar el otro boton
 
+
+vidasCargadas
     ; Despliegue de vidas en la segunda linea
     ; Moverse a la posicion 5 de la segunda linea (0x45)
     bcf     RS 
@@ -474,12 +552,18 @@ gameWon                         ; [TODO] Implementar lÃ³gica para prender el l
     call    enviaDatos
     
 
+    bcf     RS
 checkNewGame
     btfss   botonA              ; Checa si se presiono el botonA (RE0)
-        goto    checkNewGame    ; Si no se ha presionado, vuelve a checar 
+        goto    shifteoWin      ; Si no se ha presionado, shiftea la LCD
     bcf     ledWin              ; Si se presiona, apaga el led y reinicia el juego
+    bsf     RS
     goto    reiniciaJuego       ; Reinicia el juego
 
+shifteoWin                      ; Hace un shift de la pantalla
+    movlw   b'00011000'
+    call    enviaDatos
+    goto    checkNewGame
 
 
 gameOver                         ;[TODO] Implementar lÃ³gica para prender el led de perdedor y para regresar al menu principal
@@ -546,14 +630,18 @@ gameOver                         ;[TODO] Implementar lÃ³gica para prender el l
     movlw   'A'
     call    enviaDatos
     
-
+    bcf     RS
 checkRetry
     btfss   botonA              ; Checa si se presiono el botonA (RE0)
-        goto    checkRetry      ; Si no se ha presionado, vuelve a checar 
+        goto    shifteoLose      ; Si no se ha presionado, vuelve a checar 
     bcf     ledLose             ; Si se presiona, apaga el led y reinicia el juego
+    bsf     RS
     goto    reiniciaJuego       ; Reinicia el juego
 
-
+shifteoLose                      ; Hace un shift de la pantalla
+    movlw   b'00011000'
+    call    enviaDatos
+    goto    checkRetry
 
     ; Despliegue de flechas hacia arriba -----------------------------------------------------------------------------------
 arrowUp
@@ -862,7 +950,20 @@ ret2ms call ret1ms
     call    ret1ms
     return
     
-     ; Subrutinas para EEPROM ----------------------------------------------------------------------------------------------------
+
+    ; Subrutina para cargar vidas segun la dificultad ----------------------------------------------------------------------
+carga6vidas
+    movlw   d'6'                    ; se carga la cantidad de vidas
+    movwf   vidas  
+    goto    vidasCargadas
+
+carga2vidas
+    movlw   d'2'                    ; se carga la cantidad de vidas
+    movwf   vidas  
+    goto    vidasCargadas
+
+
+    ; Subrutinas para EEPROM ----------------------------------------------------------------------------------------------------
 
 escribeDerrotasEEPROM
     movwf   EEADR, A
